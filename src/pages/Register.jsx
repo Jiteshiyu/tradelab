@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"; 
 import {
   signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
@@ -24,8 +25,32 @@ const Register = () => {
     }
   };
 
-  // Listen for auth state change
+  // Listen for auth state change and handle redirect result
   useEffect(() => {
+    const fetchRedirectResult = async () => {
+      try {
+        // This is the important part: handling the redirect result
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const userData = {
+            firstName: result.user.displayName.split(" ")[0],
+            lastName: result.user.displayName.split(" ").slice(1).join(" "),
+            email: result.user.email,
+          };
+          setUser(userData);
+          console.log("User signed in (redirect):", userData);
+        } else {
+          console.log("No redirect result yet.");
+        }
+      } catch (error) {
+        console.error("Error fetching redirect result:", error);
+      }
+    };
+
+    // Always try to fetch the redirect result after the page reloads
+    fetchRedirectResult();
+
+    // Optionally, you can listen for auth state change here too
     onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log("User signed in (onAuthStateChanged):", user);
@@ -35,7 +60,6 @@ const Register = () => {
           email: user.email,
         };
         setUser(userData);
-        console.log("User signed up:", userData);
       } else {
         console.log("No user signed in yet.");
       }
