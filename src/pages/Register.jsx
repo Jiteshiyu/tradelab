@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; 
 import {
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
@@ -17,27 +15,17 @@ const Register = () => {
       setLoading(true);
       console.log("Google Signup initiated...");
 
-      const isMobile = window.innerWidth <= 768;
-      console.log("Is mobile device:", isMobile);
+      // Force the popup method for both desktop and mobile
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("Popup result:", result);
 
-      if (isMobile) {
-        // Use redirect for mobile
-        console.log("Mobile sign-in with redirect...");
-        await signInWithRedirect(auth, googleProvider); // Mobile redirect
-      } else {
-        // Use popup for desktop
-        console.log("Desktop sign-in with popup...");
-        const result = await signInWithPopup(auth, googleProvider);
-        console.log("Popup result:", result);
-
-        const userData = {
-          firstName: result.user.displayName.split(" ")[0],
-          lastName: result.user.displayName.split(" ").slice(1).join(" "),
-          email: result.user.email,
-        };
-        setUser(userData);
-        console.log("User signed up:", userData);
-      }
+      const userData = {
+        firstName: result.user.displayName.split(" ")[0],
+        lastName: result.user.displayName.split(" ").slice(1).join(" "),
+        email: result.user.email,
+      };
+      setUser(userData);
+      console.log("User signed up:", userData);
 
       setLoading(false);
     } catch (error) {
@@ -46,45 +34,22 @@ const Register = () => {
     }
   };
 
-  // Check for redirect result after the page reload
+  // Listen for auth state change
   useEffect(() => {
-    const checkRedirectResult = async () => {
-      console.log("Checking for redirect result...");
-
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          console.log("Redirect result found:", result);
-          const userData = {
-            firstName: result.user.displayName.split(" ")[0],
-            lastName: result.user.displayName.split(" ").slice(1).join(" "),
-            email: result.user.email,
-          };
-          setUser(userData);
-          console.log("User signed up from redirect:", userData);
-        } else {
-          console.log("No redirect result found, checking auth state...");
-          onAuthStateChanged(auth, (user) => {
-            if (user) {
-              console.log("User signed in (onAuthStateChanged):", user);
-              const userData = {
-                firstName: user.displayName.split(" ")[0],
-                lastName: user.displayName.split(" ").slice(1).join(" "),
-                email: user.email,
-              };
-              setUser(userData);
-              console.log("User signed up:", userData);
-            } else {
-              console.log("No user signed in yet.");
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Error during redirect result check:", error);
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("User signed in (onAuthStateChanged):", user);
+        const userData = {
+          firstName: user.displayName.split(" ")[0],
+          lastName: user.displayName.split(" ").slice(1).join(" "),
+          email: user.email,
+        };
+        setUser(userData);
+        console.log("User signed up:", userData);
+      } else {
+        console.log("No user signed in yet.");
       }
-    };
-
-    checkRedirectResult();
+    });
   }, []);
 
   return (
