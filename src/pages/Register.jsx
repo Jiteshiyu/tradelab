@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react"; 
 import {
-  signInWithPopup,
+  signInWithRedirect,
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
@@ -15,18 +15,8 @@ const Register = () => {
       setLoading(true);
       console.log("Google Signup initiated...");
 
-      // Force the popup method for both desktop and mobile
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("Popup result:", result);
-
-      const userData = {
-        firstName: result.user.displayName.split(" ")[0],
-        lastName: result.user.displayName.split(" ").slice(1).join(" "),
-        email: result.user.email,
-      };
-      setUser(userData);
-      console.log("User signed up:", userData);
-
+      // Use the redirect method for both desktop and mobile
+      await signInWithRedirect(auth, googleProvider);
       setLoading(false);
     } catch (error) {
       setLoading(false);
