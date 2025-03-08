@@ -1,36 +1,30 @@
 import React, { useState, useEffect } from "react"; 
-import {
-  signInWithRedirect,
-  getRedirectResult,
-  onAuthStateChanged,
-} from "firebase/auth";
+import { signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 
 const Register = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Handle Google Sign-Up (for both desktop and mobile)
+  // Handle Google Sign-Up using Redirect
   const googleSignup = async () => {
     try {
       setLoading(true);
       console.log("Google Signup initiated...");
 
-      // Use the redirect method for both desktop and mobile
+      // Trigger redirect flow
       await signInWithRedirect(auth, googleProvider);
-      setLoading(false);
     } catch (error) {
       setLoading(false);
       console.error("Google Signup Error:", error);
     }
   };
 
-  // Listen for auth state change and handle redirect result
+  // Handle redirect result after authentication
   useEffect(() => {
-    const fetchRedirectResult = async () => {
-      try {
-        // This is the important part: handling the redirect result
-        const result = await getRedirectResult(auth);
+    // This will be triggered when the user is redirected back
+    getRedirectResult(auth)
+      .then((result) => {
         if (result) {
           const userData = {
             firstName: result.user.displayName.split(" ")[0],
@@ -38,32 +32,13 @@ const Register = () => {
             email: result.user.email,
           };
           setUser(userData);
-          console.log("User signed in (redirect):", userData);
-        } else {
-          console.log("No redirect result yet.");
+          console.log("User signed up:", userData);
         }
-      } catch (error) {
-        console.error("Error fetching redirect result:", error);
-      }
-    };
-
-    // Always try to fetch the redirect result after the page reloads
-    fetchRedirectResult();
-
-    // Optionally, you can listen for auth state change here too
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("User signed in (onAuthStateChanged):", user);
-        const userData = {
-          firstName: user.displayName.split(" ")[0],
-          lastName: user.displayName.split(" ").slice(1).join(" "),
-          email: user.email,
-        };
-        setUser(userData);
-      } else {
-        console.log("No user signed in yet.");
-      }
-    });
+      })
+      .catch((error) => {
+        setLoading(false);
+        console.error("Error getting redirect result:", error);
+      });
   }, []);
 
   return (
